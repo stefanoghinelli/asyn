@@ -1,6 +1,6 @@
 # asyn
 
-> Package to list synonyms for a word from a thesaurus uses the Datamuse API 
+> Package to list synonyms for a word from a thesaurus using the Datamuse API 
 
 ## Installation
 
