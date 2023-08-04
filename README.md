@@ -4,10 +4,12 @@
 
 ## Installation
 
-> Note: golang >= 1.20 required
+> Note: go >= 1.20 required
 
 ```
-$ go get github.com/stefanoghinelli/asyn
+$ export GOPATH=$HOME/go
+$ export PATH=$PATH:$GOPATH/bin
+$ go install -v github.com/stefanoghinelli/asyn@latest
 ```
 
 ## Usage
