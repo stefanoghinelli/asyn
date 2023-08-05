@@ -10,29 +10,56 @@ import (
 	"strconv"
 )
 
-const datamuseAPI = "https://api.datamuse.com/words"
+func fetchData(word string, results int) ([]string, error) {
+	var thesaurusURL = "https://api.datamuse.com/words"
+	client := resty.New()
+	resp, err := client.R().SetQueryParam("rel_syn", word).SetQueryParam("max", strconv.Itoa(results)).Get(thesaurusURL)
 
-type Synonym struct {
-	Word string "json:'word'"
+	if err != nil {
+		return nil, err
+	}
+
+	synonyms := getSynonyms(resp.Body())
+
+	if len(synonyms) == 0 {
+		return nil, fmt.Errorf("no synonyms found for the word %s", word)
+	}
+
+	return synonyms, nil
+}
+
+func getSynonyms(response []byte) []string {
+	var synonyms []string
+	var data []map[string]interface{}
+	err := json.Unmarshal(response, &data)
+	if err != nil {
+		return nil
+	}
+
+	for _, item := range data {
+		if synonym, ok := item["word"].(string); ok {
+			synonyms = append(synonyms, synonym)
+		}
+	}
+
+	return synonyms
 }
 
 func main() {
 	var rootCmd = &cobra.Command{Use: "asyn"}
-
 	var word string
 	var results int
-
 	var listCmd = &cobra.Command{
 		Use:   "list",
 		Run: func(cmd *cobra.Command, args []string) {
-			synonyms, err := getSynonyms(word, results)
+			synonyms, err := fetchData(word, results)
 			if err != nil {
 				log.Fatal(err)
 			}
 
 			fmt.Printf("Synonyms for %s:\n", word)
 			for _, synonym := range synonyms {
-				fmt.Println(" -", synonym.Word)
+				fmt.Println(" -", synonym)
 			}
 		},
 	}
@@ -46,27 +73,3 @@ func main() {
 	}
 }
 
-func getSynonyms(word string, results int) ([]Synonym, error) {
-	client := resty.New()
-
-	resp, err := client.R().
-		SetQueryParam("rel_syn", word).
-		SetQueryParam("max", strconv.Itoa(results)).
-		Get(datamuseAPI)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var synonyms []Synonym
-	err = json.Unmarshal(resp.Body(), &synonyms)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(synonyms) == 0 {
-		return nil, fmt.Errorf("no synonyms found for the word %s", word)
-	}
-
-	return synonyms, nil
-}
